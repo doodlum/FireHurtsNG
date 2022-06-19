@@ -1,121 +1,142 @@
 #include "FireStorage.h"
-#include "json/json.h"
+#include <filesystem>
 
 namespace FiresStorage
 {
-	namespace Impl
-	{
-		// [0.0, 0.0, 0.0]
-		RE::NiPoint3 parse_point(const Json::Value& p)
-		{
-			return { p[0].asFloat(), p[1].asFloat(), p[2].asFloat() };
-		}
-
-		// bottomleft--upperright
-		// { "id" : 352772, "offset": [0.0, 0.0, 0.0], "bounds" : [100.0, 100.0, 50.0] }
-		STAT_info get_bounds(const Json::Value& item)
-		{
-			auto offset = parse_point(item["offset"]);
-			auto bounds = parse_point(item["bounds"]);
-			RE::NiPoint3 boundsdiv2 = bounds / 2.0f;
-			return { offset - boundsdiv2, offset + boundsdiv2 };
-		}
-	}
-
-	void Storage::add_support()
-	{
-		Json::Value json_root;
-		std::ifstream ifs;
-		ifs.open("Data/SKSE/Plugins/FiresHurtRE.json"s);
-		ifs >> json_root;
-		ifs.close();
-
-		const Json::Value json_data = json_root["data"];
-
-		for (int mod_ind = 0; mod_ind < (int)json_data.size(); ++mod_ind) {
-			// "Campfire.esm" : [ { "id" : 352772, "offset": [0.0, 0.0, 0.0], "bounds" : [100.0, 100.0, 50.0] } ]
-			const auto mod = json_data[mod_ind];
-			const auto mod_name = mod.getMemberNames()[0];
-			unsigned int prefix = std::stoul(mod_name, nullptr, 16);
-			//auto esp = RE::TESDataHandler::GetSingleton()->LookupModByName(mod_name);
-			//if (!esp)
-			//	logger::info("lox");
-			//logger::info("{}", esp->formoffset);
-			const auto formids = mod[mod_name];
-			for (int i = 0; i < (int)formids.size(); i++) {
-				// { "id" : 352772, "offset": [0.0, 0.0, 0.0], "bounds" : [100.0, 100.0, 50.0] }
-				const auto item = formids[i];
-				auto id = item["id"].asInt();
-				data[id | prefix] = Impl::get_bounds(item);
-			}
-		}
-	}
-
 	void Storage::add_support_vanilla()
-
 	{
-		register_data_entry(0xD61B6, 1.000000f, { 1074.327393f, -2311.895996f, 8952.120117f }, { 1088.000000f, -2240.000000f, 8992.000000f }, { 896.1055f, 975.5161f, 137.2891f });
-		register_data_entry(0x3BD2E, 1.000000f, { -700.000000f, -3500.000000f, 8960.000000f }, { -700.515991f, -3500.052490f, 8979.500000f }, { 45.6865f, 54.5220f, 45.0000f });
-		register_data_entry(0x35F49, 1.000000f, { -3500.000000f, -1900.000000f, 8960.000000f }, { -3500.080566f, -1901.848267f, 8994.674805f }, { 80.6660f, 95.2422f, 85.0020f });
-		register_data_entry(0x58301, 1.000000f, { -2700.000000f, -2300.000000f, 8960.000000f }, { -2692.947266f, -2300.012695f, 9074.977539f }, { 65.6846f, 66.5117f, 58.0312f });
-		register_data_entry(0x35F47, 1.000000f, { -3100.000000f, -3500.000000f, 8960.000000f }, { -3099.428467f, -3496.166992f, 8995.402344f }, { 90.1318f, 92.9639f, 104.8047f });
-		register_data_entry(0x33DA9, 1.000000f, { -3500.000000f, -3100.000000f, 8960.000000f }, { -3503.598389f, -3101.285889f, 8975.587891f }, { 50.5786f, 52.0269f, 35.6484f });
-		register_data_entry(0xEF77F, 1.000000f, { 2336.000000f, -2816.000000f, 8960.000000f }, { 2368.000000f, -2816.000000f, 9184.000000f }, { 894.4766f, 872.9912f, 442.0000f });
-		register_data_entry(0xEF2D6, 1.000000f, { -2700.000000f, -2700.000000f, 8960.000000f }, { -2699.434326f, -2700.725098f, 8983.433594f }, { 44.7485f, 47.7456f, 53.4941f });
-		register_data_entry(0xD61BE, 1.000000f, { 3712.000000f, -2880.000000f, 8960.000000f }, { 3712.000000f, -2848.000000f, 9184.000000f }, { 913.7188f, 910.7720f, 442.0000f });
-		register_data_entry(0x10ACC0, 1.000000f, { 1000.181641f, -3268.005371f, 8966.669922f }, { 1010.586670f, -3279.781982f, 9152.000000f }, { 430.9429f, 406.8643f, 507.5527f });
-		register_data_entry(0xCBB23, 1.000000f, { -1100.000000f, -3500.000000f, 8960.000000f }, { -1101.362061f, -3506.513916f, 9008.813477f }, { 58.9697f, 102.1133f, 131.6250f });
-		register_data_entry(0x106112, 1.000000f, { -3100.000000f, -2300.000000f, 8960.000000f }, { -3101.369629f, -2298.995361f, 8980.781250f }, { 54.3740f, 46.5376f, 57.6582f });
-		register_data_entry(0x13B40, 1.000000f, { -1900.000000f, -2300.000000f, 8960.000000f }, { -1900.000000f, -2300.000000f, 8964.068359f }, { 128.0000f, 128.0000f, 78.3965f });
-		register_data_entry(0x10D820, 1.000000f, { -1500.000000f, -2300.000000f, 8960.000000f }, { -1500.964844f, -2292.408691f, 9014.920898f }, { 81.0825f, 93.4292f, 143.8379f });
-		register_data_entry(0x4C5CF, 1.000000f, { -640.000000f, -2048.000000f, 8960.000000f }, { -640.342896f, -2063.147949f, 9152.000000f }, { 406.6594f, 394.2286f, 512.0000f });
-		register_data_entry(0x101A51, 1.000000f, { -1100.000000f, -2300.000000f, 8960.000000f }, { -1101.738037f, -2302.032227f, 8996.372070f }, { 73.6294f, 94.3110f, 106.7441f });
-		register_data_entry(0xFB9B0, 1.000000f, { -1500.000000f, -1900.000000f, 8960.000000f }, { -1497.493530f, -1901.949829f, 9010.182617f }, { 91.3323f, 75.5286f, 134.3652f });
-		register_data_entry(0x33DA4, 1.000000f, { -3500.000000f, -3500.000000f, 8960.000000f }, { -3498.902100f, -3499.757080f, 8969.000000f }, { 49.9297f, 54.9707f, 37.5605f });
-		register_data_entry(0x4318B, 1.000000f, { -3500.000000f, -2700.000000f, 8960.000000f }, { -3501.099609f, -2699.806885f, 8985.584961f }, { 53.6367f, 51.3276f, 65.8887f });
-		register_data_entry(0x51577, 1.000000f, { 160.000000f, -2688.000000f, 8960.000000f }, { 162.318298f, -2714.887451f, 9158.245117f }, { 369.1462f, 412.4521f, 524.4902f });
-		register_data_entry(0xF6304, 1.000000f, { -224.000000f, -3360.000000f, 8960.000000f }, { -214.414154f, -3371.850830f, 9156.726562f }, { 375.7857f, 398.2300f, 521.4531f });
-		register_data_entry(0x13B42, 1.000000f, { -2700.000000f, -3100.000000f, 8960.000000f }, { -2700.000000f, -3100.000000f, 8971.653320f }, { 60.0000f, 60.0000f, 53.1289f });
-		register_data_entry(0xC2BF1, 1.000000f, { -1900.000000f, -1900.000000f, 8960.000000f }, { -1897.976074f, -1905.308105f, 9008.771484f }, { 81.3799f, 82.3420f, 131.5449f });
-		register_data_entry(0x951D8, 1.000000f, { -1900.000000f, -2700.000000f, 8960.000000f }, { -1897.899902f, -2701.527588f, 9000.375977f }, { 75.3789f, 73.9917f, 114.7520f });
-		register_data_entry(0xF597F, 1.000000f, { -544.000000f, -2752.000000f, 8960.000000f }, { -563.194580f, -2763.395508f, 9152.000000f }, { 399.0237f, 354.6035f, 512.0000f });
-		register_data_entry(0x1092E2, 1.000000f, { -3100.000000f, -1900.000000f, 8960.000000f }, { -3098.660889f, -1902.231567f, 8975.877930f }, { 48.2061f, 49.0273f, 36.8730f });
-		register_data_entry(0xCD824, 1.000000f, { -3100.000000f, -3100.000000f, 8960.000000f }, { -3099.470459f, -3099.466064f, 8978.296875f }, { 47.5425f, 47.4248f, 36.5938f });
-		register_data_entry(0xDB682, 1.000000f, { -2300.000000f, -2700.000000f, 8960.000000f }, { -2308.376953f, -2699.847168f, 8997.219727f }, { 86.3706f, 88.2397f, 108.4395f });
-		register_data_entry(0xB6C08, 1.000000f, { -1100.000000f, -3100.000000f, 8960.000000f }, { -1095.754028f, -3102.672607f, 8998.653320f }, { 74.7122f, 90.1211f, 111.3066f });
-		register_data_entry(0xCBB2F, 1.000000f, { -2300.000000f, -1900.000000f, 8960.000000f }, { -2297.821289f, -1900.941040f, 8996.069336f }, { 96.1733f, 82.6287f, 106.1387f });
-		register_data_entry(0xC6918, 1.000000f, { -2300.000000f, -2300.000000f, 8960.000000f }, { -2290.415039f, -2302.946777f, 8987.950195f }, { 93.5225f, 86.2998f, 89.9004f });
-		register_data_entry(0x35F4A, 1.000000f, { -3500.000000f, -2300.000000f, 8960.000000f }, { -3500.009521f, -2302.951660f, 8977.527344f }, { 78.8794f, 80.6802f, 70.2637f });
-		register_data_entry(0xE7C9A, 1.000000f, { -1100.000000f, -2700.000000f, 8960.000000f }, { -1097.105103f, -2702.149170f, 9010.651367f }, { 81.0256f, 84.5479f, 135.3027f });
-		register_data_entry(0x90CA4, 1.000000f, { -1900.000000f, -3100.000000f, 8960.000000f }, { -1900.667114f, -3103.451660f, 8993.419922f }, { 80.3894f, 82.1899f, 100.8359f });
-		register_data_entry(0xCD823, 1.000000f, { -3100.000000f, -2700.000000f, 8960.000000f }, { -3099.657471f, -2700.752930f, 8988.335938f }, { 50.4790f, 48.8921f, 73.3281f });
-		register_data_entry(0xAA71C, 1.000000f, { -2700.000000f, -3500.000000f, 8960.000000f }, { -2697.453857f, -3500.710205f, 8982.713867f }, { 42.5693f, 47.7461f, 50.7461f });
+		auto hex = get_mod_index("Skyrim.esm"sv);
+		register_data_entry(hex | 0xD61B6, { 6.06f, -13.00f, 43.19f }, { 702.14f, 686.65f, 64.38f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x1092E2, { -0.28f, 1.36f, 4.25f }, { 58.18f, 53.87f, 21.72f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xE4E22, { -48.00f, -8.00f, -2.00f }, { 128.00f, 96.00f, 64.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xE7C9A, { 8.96f, -6.59f, 19.64f }, { 94.41f, 104.59f, 73.27f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xC2BF1, { 4.41f, 3.80f, 38.51f }, { 129.18f, 111.38f, 111.01f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xAA71C, { 0.65f, -2.67f, 6.99f }, { 42.94f, 44.57f, 30.25f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xE4E24, { -9.00f, 0.50f, -2.50f }, { 92.00f, 65.00f, 3.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x101A51, { 3.80f, -3.02f, 23.80f }, { 108.79f, 97.53f, 81.60f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x35F4A, { 0.00f, 0.00f, 21.78f }, { 114.00f, 98.00f, 59.57f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x90CA4, { 2.95f, 1.34f, 38.16f }, { 118.75f, 111.29f, 110.33f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xEF2D6, { -0.65f, 1.26f, 6.04f }, { 52.53f, 52.38f, 35.27f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x16D4B, { 2.50f, -1.50f, 67.50f }, { 45.00f, 305.00f, 179.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x951D8, { 2.37f, 1.14f, 20.25f }, { 90.89f, 116.61f, 74.50f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xCBB2F, { 8.16f, -7.54f, 23.67f }, { 102.46f, 106.96f, 81.34f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xFFF43, { -0.10f, 0.10f, 571.32f }, { 48.18f, 51.82f, 1518.64f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xCD823, { -2.00f, -0.02f, 1.27f }, { 53.55f, 57.54f, 24.71f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x106112, { 0.52f, -3.15f, 5.43f }, { 62.68f, 54.64f, 30.59f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x3103C, { 8.50f, -1.50f, 70.50f }, { 83.00f, 81.00f, 173.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xFB9B0, { 9.19f, -7.62f, 31.44f }, { 90.04f, 95.34f, 96.88f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xDB682, { -1.76f, 5.68f, 24.00f }, { 98.57f, 104.18f, 81.99f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xBF9E1, { -6.04f, 175.48f, 13.00f }, { 122.21f, 88.01f, 22.56f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x3103F, { 4.00f, -1.50f, 70.50f }, { 84.00f, 81.00f, 173.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x13B42, { 0.00f, 0.00f, 4.00f }, { 60.00f, 60.00f, 8.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xF597F, { -15.79f, 1.62f, 210.36f }, { 427.37f, 389.90f, 548.71f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x108D7A, { 2.27f, -1.52f, -30.50f }, { 114.99f, 173.99f, 403.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x10D820, { 6.46f, 5.25f, 23.63f }, { 104.70f, 87.80f, 81.27f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xF6304, { 3.08f, -11.61f, 174.58f }, { 417.02f, 391.91f, 477.16f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xCD824, { 0.49f, 0.53f, 9.26f }, { 42.73f, 42.70f, 18.51f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x3BD2E, { -0.48f, -3.25f, 6.72f }, { 48.95f, 54.44f, 19.44f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x4318B, { -3.12f, 0.50f, 16.56f }, { 63.96f, 60.11f, 43.64f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xBBCF1, { -13.57f, 279.17f, 13.90f }, { 299.74f, 213.21f, 30.08f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x33DA4, { 3.02f, -3.54f, 7.07f }, { 70.65f, 55.49f, 32.57f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x35F47, { -1.88f, -1.02f, 27.88f }, { 95.70f, 118.41f, 89.76f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xD61BE, { -7.75f, -3.24f, 232.00f }, { 509.34f, 521.75f, 442.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xCAE0B, { -15.44f, 167.83f, 22.51f }, { 101.61f, 117.39f, 24.25f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xC6918, { -1.81f, 5.86f, 25.92f }, { 96.67f, 103.53f, 85.84f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xB6C08, { -1.32f, -7.49f, 36.08f }, { 87.35f, 121.65f, 106.16f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x30B39, { 5.00f, -1.50f, 110.00f }, { 84.00f, 81.00f, 248.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x51577, { 3.59f, -16.30f, 195.54f }, { 354.00f, 357.89f, 519.09f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x10ACC0, { 18.32f, -25.57f, 206.25f }, { 354.71f, 304.91f, 416.50f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xA9230, { -2.52f, 0.41f, 2.08f }, { 64.96f, 59.77f, 38.16f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x33DA9, { -2.10f, -1.84f, 5.41f }, { 48.31f, 53.07f, 16.53f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x35F49, { -2.46f, -4.85f, 36.89f }, { 90.96f, 113.08f, 67.30f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xEF77F, { 13.03f, -5.74f, 232.00f }, { 571.43f, 592.28f, 442.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x13B40, { 0.00f, 0.00f, 4.00f }, { 128.00f, 128.00f, 8.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xE4E23, { -21.00f, 0.50f, -3.00f }, { 92.00f, 65.00f, 2.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x4C5CF, { 7.07f, -3.69f, 202.13f }, { 418.99f, 384.54f, 532.26f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0xCBB23, { -5.04f, -7.50f, 26.40f }, { 114.13f, 98.69f, 86.80f }, { 0.0000f, 0.0000f, 0.0000f });
 		
-		register_data_entry(0xBF9E1, 1.000000f, { 0.0f, 0.0f, 0.0f }, { -15.0f, 170.0f, 50.0f }, { 100.0f, 100.0f, 100.0f });
-		register_data_entry(0xCAE0B, 1.000000f, { 0.0f, 0.0f, 0.0f }, { -10.0f, 170.0f, 50.0f }, { 110.0f, 110.0f, 100.0f });
-		register_data_entry(0xBBCF1, 1.000000f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 270.0f, 50.0f }, { 320.0f, 210.0f, 100.0f });
+		set_magic_forms(hex, { 0xFFF43, 0x108D7A });
+		set_steam_forms(hex, { 0x16D4B, 0x30B39, 0xE4E22, 0xE4E24, 0xE4E23, 0x3103F, 0x3103C });
+	}
 
-		// magic
-		register_data_entry_magic(0xFFF43, 1.000000f, { -3776.000000f, -2464.000000f, 9152.000000f }, { -3776.063965f, -2468.324951f, 9790.592773f }, { 170.2119f, 168.7788f, 1653.1855f });
-		register_data_entry_magic(0x108D70, 1.000000f, { -3808.000000f, -2752.000000f, 9152.000000f }, { -3808.000977f, -2752.967529f, 9232.500000f }, { 84.1328f, 81.8286f, 515.0000f });
-		register_data_entry_magic(0x108D74, 1.000000f, { -3776.000000f, -3008.000000f, 9152.000000f }, { -3778.332764f, -3009.688477f, 9116.000000f }, { 148.2515f, 182.5703f, 414.0000f });
-		register_data_entry_magic(0x108D7A, 1.000000f, { -3801.363037f, -3366.636963f, 9164.958984f }, { -3796.145508f, -3371.360352f, 9134.458984f }, { 198.6094f, 193.2520f, 403.0000f });
+	void Storage::add_support_campfire() {
+		auto hex = get_mod_index("Campfire.esm"sv);
+		if (hex == -1)
+			return;
+		
+		register_data_entry(hex | 0x33E67, { -8.21f, 2.23f, 48.34f }, { 101.98f, 89.54f, 117.80f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x6ABB2, { -3.30f, -2.41f, 22.84f }, { 105.07f, 83.25f, 79.68f }, { 0.0000f, 0.0000f, 314.1635f });
+		register_data_entry(hex | 0x5C8D8, { -0.11f, -0.01f, 13.31f }, { 47.86f, 43.97f, 26.24f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x40013, { -1.72f, -0.18f, 18.70f }, { 53.24f, 58.36f, 40.02f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x33E69, { -0.65f, -7.32f, 19.34f }, { 92.83f, 99.29f, 72.68f }, { 0.0000f, 0.0000f, 34.3777f });
+		register_data_entry(hex | 0x328A6, { 2.14f, -4.46f, 12.14f }, { 62.12f, 59.05f, 27.46f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x328A8, { 9.38f, 3.46f, 13.42f }, { 40.20f, 43.09f, 25.05f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x5C8D6, { -2.53f, -4.01f, 10.42f }, { 18.41f, 38.02f, 16.62f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x32333, { -1.96f, -1.68f, 6.65f }, { 51.61f, 32.79f, 20.89f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x328B9, { -3.92f, -3.67f, 15.55f }, { 92.24f, 96.44f, 47.10f }, { 0.0000f, 0.0000f, 302.7047f });
+		register_data_entry(hex | 0x56204, { 0.00f, 0.00f, 4.00f }, { 128.00f, 128.00f, 8.00f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x32334, { 3.05f, -0.98f, 9.26f }, { 29.20f, 31.95f, 14.41f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x4F5EB, { 1.35f, 4.95f, 577.54f }, { 47.30f, 42.52f, 1531.08f }, { 0.0000f, 0.0000f, 0.0000f });
+		
+		set_magic_forms(hex, { 0x4F5EB });
+	}
 
-		// steams
-		register_data_entry_steam(0x16D4B, 1.000000f, { -4075.094238f, -1879.892090f, 8994.178711f }, { -4072.594238f, -1881.392090f, 9061.678711f }, { 45.0000f, 305.0000f, 179.0000f });
-		register_data_entry_steam(0x30B39, 1.000000f, { -4059.250488f, -2225.849609f, 8960.000000f }, { -4056.412598f, -2226.499512f, 9070.000000f }, { 46.8911f, 44.2217f, 248.0000f });
-		register_data_entry_steam(0xE4E22, 1.000000f, { -4025.400879f, -2452.458984f, 8982.800781f }, { -4052.473145f, -2453.298340f, 8983.797852f }, { 64.2539f, 60.6514f, 66.6309f });
-		register_data_entry_steam(0xE4E24, 1.000000f, { -4079.597656f, -2764.141113f, 8971.039062f }, { -4074.465576f, -2763.789795f, 8977.946289f }, { 35.5591f, 45.1616f, 57.7148f });
-		register_data_entry_steam(0xE4E23, 1.000000f, { -4060.600098f, -3000.004639f, 8967.696289f }, { -4065.899414f, -3000.029053f, 8973.438477f }, { 38.2832f, 30.0762f, 87.1602f });
-		register_data_entry_steam(0x3103F, 1.000000f, { -4117.179199f, -3248.154053f, 9002.896484f }, { -4113.239258f, -3249.644775f, 9073.396484f }, { 66.5947f, 63.5605f, 173.0000f });
-		register_data_entry_steam(0x3103C, 1.000000f, { -4094.702393f, -3449.509033f, 8979.580078f }, { -4086.211914f, -3451.003662f, 9050.080078f }, { 63.2871f, 61.3018f, 173.0000f });
+	void Storage::add_support_dragonborn() {
+		auto hex = get_mod_index("Dragonborn.esm"sv);
+		if (hex == -1)
+			return;
+
+		register_data_entry(hex | 0x18616, { -1.54f, -1.31f, 0.79f }, { 38.70f, 43.24f, 35.59f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x1D737, { -2.35f, -80.89f, -53.05f }, { 392.80f, 393.46f, 101.81f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x289E8, { -7.69f, 0.32f, 2.81f }, { 47.79f, 51.09f, 39.63f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x1D738, { 11.94f, -20.56f, -1.66f }, { 310.78f, 323.74f, 180.69f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x2C0B0, { -6.84f, -1.99f, 3.05f }, { 55.43f, 46.72f, 40.09f }, { 0.0000f, 0.0000f, 0.0000f });
+		register_data_entry(hex | 0x18619, { -0.54f, -0.07f, 1.68f }, { 43.39f, 58.95f, 37.36f }, { 0.0000f, 0.0000f, 0.0000f });
 	}
 
 	Storage fires_storage;
 
-	std::pair<RE::NiPoint3, RE::NiPoint3> get_refr_bounds(RE::TESObjectREFR* a, float scale)
+	local_bounds_t get_refr_bounds(RE::TESObjectREFR* a, float scale)
 	{
 		return fires_storage.get_refr_bounds(a, scale);
+	}
+
+	void rotateSkyrim_M_Player(RE::NiMatrix3& ans, RE::TESObjectREFR* p)
+	{
+		auto rot = RE::NiPoint3(0,0, p->GetAngleZ());
+		RE::NiMatrix3 m;
+		m.EulerAnglesToAxesZXY(rot);
+		ans = m * ans;
+	}
+
+	local_bounds_t get_refr_bounds(RE::TESObjectREFR* a)
+	{
+		auto ans = get_refr_bounds(a, a->GetScale());
+
+		auto bone = a->Get3D();
+		RE::NiPoint3 startPos = bone->world.translate;
+		ans.Normals = bone->world.rotate * ans.Normals;
+		ans.Base = bone->world.rotate * ans.Base;
+
+		return ans;
+	}
+
+	local_bounds_t get_npc_bounds(RE::TESObjectREFR* p)
+	{
+		constexpr float DOWN = 5.0f;
+		const RE::NiMatrix3 PLAYER_BOUNDS{ { 25.0f, 0, 0 }, { 0, 17.0f, 0 }, { 0, 0, 60.0f + DOWN } };
+		auto scale = p->GetScale();
+		local_bounds_t ans;
+		ans.Base = RE::NiPoint3{ 0, 0, PLAYER_BOUNDS.entry[2][2] - DOWN } * scale;
+		ans.Normals = PLAYER_BOUNDS * scale;
+		rotateSkyrim_M_Player(ans.Normals, p);
+		return ans;
+	}
+
+	RE::NiPoint3 get_bounds_center(RE::TESObjectREFR* refr) {
+		auto bounds = get_refr_bounds(refr);
+		bounds.Base += refr->GetPosition();
+		return bounds.Base;
 	}
 
 	void init_fires()

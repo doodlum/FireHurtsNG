@@ -49,6 +49,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 #include "Geom.h"
 #include "FireStorage.h"
 #include "Settings.h"
+#include <array>
 
 class DataStorage
 {
@@ -88,32 +89,56 @@ bool is_onfire(RE::Actor* a)
 	return FenixUtils::TESObjectREFR__HasEffectKeyword(a, DataStorage::get_f314FH_kywd_All());
 }
 
+auto get_bound_vertexes(const global_bounds_t& bounds)
+{
+	RE::NiPoint3 n1{ bounds.Normals.entry[0][0], bounds.Normals.entry[1][0], bounds.Normals.entry[2][0] };
+	RE::NiPoint3 n2{ bounds.Normals.entry[0][1], bounds.Normals.entry[1][1], bounds.Normals.entry[2][1] };
+	RE::NiPoint3 n3{ bounds.Normals.entry[0][2], bounds.Normals.entry[1][2], bounds.Normals.entry[2][2] };
+	return std::array<RE::NiPoint3, 8>{
+		bounds.Base + n1 + n2 + n3,
+		bounds.Base - n1 + n2 + n3,
+		bounds.Base - n1 - n2 + n3,
+		bounds.Base + n1 - n2 + n3,
+		bounds.Base + n1 + n2 - n3,
+		bounds.Base - n1 + n2 - n3,
+		bounds.Base - n1 - n2 - n3,
+		bounds.Base + n1 - n2 - n3
+	};
+}
+
 template <glm::vec4 Color = Colors::RED>
-void draw_bounds(const Rect& bounds, float update_period)
+void draw_bounds(const global_bounds_t& bounds, float update_period)
 {
 	auto verts = get_bound_vertexes(bounds);
-	draw_line<Color>(verts[0], verts[1], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[0], verts[2], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[3], verts[1], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[3], verts[2], 5.0f, static_cast<int>(update_period) * 1000);
+	const int dur = static_cast<int>(update_period * 1000);
+	const float wide = 5.0f;
 
-	draw_line<Color>(verts[4], verts[5], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[4], verts[6], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[7], verts[5], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[7], verts[6], 5.0f, static_cast<int>(update_period) * 1000);
+	auto draw_ = [=](int u, int v) {
+		draw_line<Color>(verts[u], verts[v], wide, dur);
+	};
 
-	draw_line<Color>(verts[6], verts[2], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[4], verts[0], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[5], verts[1], 5.0f, static_cast<int>(update_period) * 1000);
-	draw_line<Color>(verts[7], verts[3], 5.0f, static_cast<int>(update_period) * 1000);
+	draw_(0, 1);
+	draw_(0, 3);
+	draw_(2, 1);
+	draw_(2, 3);
+
+	draw_(4, 5);
+	draw_(4, 7);
+	draw_(6, 5);
+	draw_(6, 7);
+
+	draw_(0, 4);
+	draw_(1, 5);
+	draw_(2, 6);
+	draw_(3, 7);
 }
 
 template <glm::vec4 Color = Colors::RED>
 void draw([[maybe_unused]] RE::Actor* a, [[maybe_unused]] RE::TESObjectREFR* refr, [[maybe_unused]] float update_period)
 {
 #ifdef DEBUG
+	//draw_line<Color>(FiresStorage::get_bounds_center(refr), a->GetPosition(), 5.0f, static_cast<int>(update_period) * 1000);
 	draw_line<Color>(refr->GetPosition(), a->GetPosition(), 5.0f, static_cast<int>(update_period) * 1000);
-	draw_bounds<Color>(get_npc_bounds(a), update_period);
 	draw_bounds<Color>(get_refr_bounds(refr), update_period);
 #endif  // DEBUG
 }
@@ -198,7 +223,7 @@ class TickerPlayer
 		RE::TESObjectREFR* refr = 0;
 		RE::TES::GetSingleton()->ForEachReference([=, &mindist2, &refr](RE::TESObjectREFR& _refr) {
 			if (!_refr.IsDisabled() && FiresStorage::is_fire(_refr)) {
-				float curdist = a->GetPosition().GetSquaredDistance(_refr.GetPosition());
+				float curdist = a->GetPosition().GetSquaredDistance(FiresStorage::get_bounds_center(&_refr));
 				if (curdist < mindist2) {
 					mindist2 = curdist;
 					refr = &_refr;
@@ -206,6 +231,10 @@ class TickerPlayer
 			}
 			return true;
 		});
+
+#ifdef DEBUG
+		draw_bounds(get_npc_bounds(a), 0);
+#endif  // DEBUG
 
 		if (!refr || 10000000.0f < mindist2) {
 			ans.first.state = FireStates::NoFireNear;
@@ -261,6 +290,7 @@ public:
 			RE::Actor* a = RE::PlayerCharacter::GetSingleton();
 			auto state = update(a);
 			updateafter = get_new_updateafter(state, a);
+
 			if (state.first.state == FireStates::InFire) {
 				if (infire_time == 0.0f)
 					infire_time = delta;
@@ -291,17 +321,30 @@ private:
 	static inline REL::Relocation<decltype(Update)> _Update;
 };
 
+static void SKSEMessageHandler(SKSE::MessagingInterface::Message* message)
+{
+	switch (message->type) {
+	case SKSE::MessagingInterface::kDataLoaded:
+		FiresStorage::init_fires();
+		Settings::load();
+		PlayerCharacterHook::Hook();
+
+		break;
+	}
+}
+
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
-	logger::info("loaded");
-
-	FiresStorage::init_fires();
+	auto g_messaging = reinterpret_cast<SKSE::MessagingInterface*>(a_skse->QueryInterface(SKSE::LoadInterface::kMessaging));
+	if (!g_messaging) {
+		logger::critical("Failed to load messaging interface! This error is fatal, plugin will not load.");
+		return false;
+	}
 
 	SKSE::Init(a_skse);
-	Settings::load();
-
 	SKSE::AllocTrampoline(1 << 10);
-	PlayerCharacterHook::Hook();
+
+	g_messaging->RegisterListener("SKSE", SKSEMessageHandler);
 
 	return true;
 }
