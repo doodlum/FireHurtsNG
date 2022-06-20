@@ -19,6 +19,9 @@ namespace FiresStorage
 		static int get_mod_index(const std::string_view& name)
 		{
 			auto esp = RE::TESDataHandler::GetSingleton()->LookupModByName(name);
+			if (!esp)
+				return -1;
+
 			return !esp->IsLight() ? esp->compileIndex << 24 : (0xFE000 | esp->smallFileCompileIndex) << 12;
 		}
 
@@ -101,7 +104,7 @@ namespace FiresStorage
 	public:
 		local_bounds_t get_refr_bounds(RE::TESObjectREFR* a, float scale)
 		{
-			auto id = a->GetBaseObject()->formID;
+			auto id = a->GetBaseObject() ? a->GetBaseObject()->formID : -1;
 
 			RE::NiPoint3 Mid, ToMax, Rot;
 			auto i = data.find(id);
@@ -120,6 +123,10 @@ namespace FiresStorage
 
 		void init()
 		{
+			data = std::unordered_map<uint32_t, local_bounds_t>();
+			data_magic = std::set<uint32_t>();
+			data_steams = std::set<uint32_t>();
+
 			add_support_vanilla();
 			add_support_campfire();
 			add_support_dragonborn();

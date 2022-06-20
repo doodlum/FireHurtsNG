@@ -113,10 +113,10 @@ namespace FiresStorage
 	{
 		auto ans = get_refr_bounds(a, a->GetScale());
 
-		auto bone = a->Get3D();
-		RE::NiPoint3 startPos = bone->world.translate;
-		ans.Normals = bone->world.rotate * ans.Normals;
-		ans.Base = bone->world.rotate * ans.Base;
+		if (auto bone = a->Get3D()) {
+			ans.Normals = bone->world.rotate * ans.Normals;
+			ans.Base = bone->world.rotate * ans.Base;
+		}
 
 		return ans;
 	}
