@@ -1,55 +1,9 @@
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
-{
-#ifndef DEBUG
-	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
-#else
-	auto path = logger::log_directory();
-	if (!path) {
-		return false;
-	}
-
-	*path /= Version::PROJECT;
-	*path += ".log"sv;
-	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-#endif
-
-	auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
-
-#ifndef DEBUG
-	log->set_level(spdlog::level::trace);
-#else
-	log->set_level(spdlog::level::info);
-	log->flush_on(spdlog::level::info);
-#endif
-
-	spdlog::set_default_logger(std::move(log));
-	spdlog::set_pattern("%g(%#): [%^%l%$] %v"s);
-
-	logger::info(FMT_STRING("{} v{}"), Version::PROJECT, Version::NAME);
-
-	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = Version::PROJECT.data();
-	a_info->version = Version::MAJOR;
-
-	if (a_skse->IsEditor()) {
-		logger::critical("Loaded in editor, marking as incompatible"sv);
-		return false;
-	}
-
-	const auto ver = a_skse->RuntimeVersion();
-	if (ver < SKSE::RUNTIME_1_5_39) {
-		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
-		return false;
-	}
-
-	return true;
-}
-
 #include <UselessFenixUtils.h>
 #include "Geom.h"
 #include "FireStorage.h"
 #include "Settings.h"
 #include <array>
+
 
 class DataStorage
 {
@@ -80,7 +34,7 @@ public:
 
 bool is_cooking(RE::Actor* a)
 {
-	return a->GetSitSleepState() != RE::SIT_SLEEP_STATE::kNormal ||
+	return a->AsActorState()->GetSitSleepState() != RE::SIT_SLEEP_STATE::kNormal ||
 	       a->IsPlayerRef() && RE::UI::GetSingleton()->IsMenuOpen("Crafting Menu");
 }
 
@@ -136,7 +90,7 @@ void draw_bounds(const global_bounds_t& bounds, float update_period)
 template <glm::vec4 Color = Colors::RED>
 void draw([[maybe_unused]] RE::Actor* a, [[maybe_unused]] RE::TESObjectREFR* refr, [[maybe_unused]] float update_period)
 {
-#ifdef DEBUG
+#ifndef NDEBUG
 	//draw_line<Color>(FiresStorage::get_bounds_center(refr), a->GetPosition(), 5.0f, static_cast<int>(update_period) * 1000);
 	draw_line<Color>(refr->GetPosition(), a->GetPosition(), 5.0f, static_cast<int>(update_period) * 1000);
 	draw_bounds<Color>(get_refr_bounds(refr), update_period);
@@ -221,7 +175,7 @@ class TickerPlayer
 
 		float mindist2 = 1.0E15f;
 		RE::TESObjectREFR* refr = 0;
-		RE::TES::GetSingleton()->ForEachReference([=, &mindist2, &refr](RE::TESObjectREFR& _refr) {
+		RE::TES::GetSingleton()->ForEachReference([&](RE::TESObjectREFR& _refr) {
 			if (!_refr.IsDisabled() && FiresStorage::is_fire(_refr)) {
 				float curdist = a->GetPosition().GetSquaredDistance(FiresStorage::get_bounds_center(&_refr));
 				if (curdist < mindist2) {
@@ -229,10 +183,10 @@ class TickerPlayer
 					refr = &_refr;
 				}
 			}
-			return true;
+			return RE::BSContainer::ForEachResult::kContinue;
 		});
 
-#ifdef DEBUG
+#ifndef NDEBUG
 		draw_bounds(get_npc_bounds(a), 0);
 #endif  // DEBUG
 
@@ -245,7 +199,7 @@ class TickerPlayer
 			ans.first.state = FireStates::InFire;
 			ans.first.type = get_fire_type(refr->GetBaseObject()->GetFormID());
 
-#ifdef DEBUG
+#ifndef NDEBUG
 			draw<Colors::RED>(a, refr, get_new_updateafter(ans, a));
 #endif  // DEBUG
 
@@ -254,7 +208,7 @@ class TickerPlayer
 			ans.first.state = FireStates::NearFire;
 			ans.second = mindist2;
 
-#ifdef DEBUG
+#ifndef NDEBUG
 			draw<Colors::GRN>(a, refr, get_new_updateafter(ans, a));
 #endif  // DEBUG
 
@@ -303,23 +257,26 @@ public:
 	}
 } ticker;
 
-class PlayerCharacterHook
+
+struct PlayerCharacterHook
 {
-public:
+	static void thunk(RE::PlayerCharacter* a_player, float a_delta)
+	{
+		func(a_player, a_delta);
+#ifndef NDEBUG
+		DebugAPI_IMPL::DebugAPI::Update();
+#endif  // DEBUG
+		ticker.tick(a_delta);
+	}
+	static inline REL::Relocation<decltype(thunk)> func;
+
 	static void Hook()
 	{
-		_Update = REL::Relocation<uintptr_t>(REL::ID(RE::VTABLE_PlayerCharacter[0])).write_vfunc(0xad, Update);
+		stl::write_vfunc<RE::PlayerCharacter, 0xAD, PlayerCharacterHook>();
 	}
 
-private:
-	static void Update(RE::PlayerCharacter* a, float delta) {
-		_Update(a, delta);
-		DebugAPI_IMPL::DebugAPI::Update();
-		ticker.tick(delta);
-	}
-
-	static inline REL::Relocation<decltype(Update)> _Update;
 };
+
 
 static void SKSEMessageHandler(SKSE::MessagingInterface::Message* message)
 {
@@ -327,24 +284,12 @@ static void SKSEMessageHandler(SKSE::MessagingInterface::Message* message)
 	case SKSE::MessagingInterface::kDataLoaded:
 		FiresStorage::init_fires();
 		Settings::load();
-		PlayerCharacterHook::Hook();
-
 		break;
 	}
 }
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
+void Load()
 {
-	auto g_messaging = reinterpret_cast<SKSE::MessagingInterface*>(a_skse->QueryInterface(SKSE::LoadInterface::kMessaging));
-	if (!g_messaging) {
-		logger::critical("Failed to load messaging interface! This error is fatal, plugin will not load.");
-		return false;
-	}
-
-	SKSE::Init(a_skse);
-	SKSE::AllocTrampoline(1 << 10);
-
-	g_messaging->RegisterListener("SKSE", SKSEMessageHandler);
-
-	return true;
+	PlayerCharacterHook::Hook();
+	SKSE::GetMessagingInterface()->RegisterListener("SKSE", SKSEMessageHandler);
 }

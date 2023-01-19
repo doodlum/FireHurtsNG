@@ -1,25 +1,27 @@
 {
-  "name": "firehurtsre",
-  "version-string": "1.0.0",
-  "description": "Here should be description",
-  "homepage": "https://github.com/Ryan-rsm-McKenzie/ExamplePlugin-CommonLibSSE",
-  "license": "MIT",
-  "dependencies": [
-    "autotoml",
-    "boost-atomic",
-    "boost-stl-interfaces",
-    "glm",
-    "jsoncpp",
-    "rsm-binary-io",
-    "span-lite",
-    "spdlog",
-    "xbyak"
-  ],
-  "builtin-baseline":"bba8794b82a0f44b8709f294850a2c8e96b61415",
-  "overrides":[
-    {
-      "name":"fmt",
-      "version":"8.0.1"
-    }
-  ]
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "commonlibsse-plugin",
+    "version-string": "1.0.0",
+    "port-version": 0,
+    "description": "SKSE plugin based on CommonLibSSE, for unified AE/SE/VR deployment.",
+    "homepage": "https://www.skyrimng.com",
+    "license": "Apache-2.0",
+    "features": {
+        "plugin": {
+            "description": "Build the SKSE plugin.",
+            "dependencies": [
+                "commonlibsse-ng",
+                "tomlplusplus",
+                "glm",
+                "jsoncpp"
+            ]
+        }
+    },
+    "default-features": [
+        "plugin"
+    ],
+    "builtin-baseline": "9259a0719d94c402aae2ab7975bc096afdec15df",
+    "overrides": [
+      { "name": "tomlplusplus", "version": "2.3.0" }
+    ]
 }

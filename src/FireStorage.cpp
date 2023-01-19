@@ -111,7 +111,7 @@ namespace FiresStorage
 
 	local_bounds_t get_refr_bounds(RE::TESObjectREFR* a)
 	{
-		auto ans = get_refr_bounds(a, a->GetScale());
+		auto ans = get_refr_bounds(a, a->GetReferenceRuntimeData().refScale / 100.0f);
 
 		if (auto bone = a->Get3D()) {
 			ans.Normals = bone->world.rotate * ans.Normals;
@@ -125,7 +125,7 @@ namespace FiresStorage
 	{
 		constexpr float DOWN = 5.0f;
 		const RE::NiMatrix3 PLAYER_BOUNDS{ { 25.0f, 0, 0 }, { 0, 17.0f, 0 }, { 0, 0, 60.0f + DOWN } };
-		auto scale = p->GetScale();
+		auto                scale = p->GetReferenceRuntimeData().refScale / 100.0f;
 		local_bounds_t ans;
 		ans.Base = RE::NiPoint3{ 0, 0, PLAYER_BOUNDS.entry[2][2] - DOWN } * scale;
 		ans.Normals = PLAYER_BOUNDS * scale;

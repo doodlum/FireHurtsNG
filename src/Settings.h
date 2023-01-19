@@ -1,5 +1,6 @@
 #pragma once
 #include "PCH.h"
+#include <AutoTOML.hpp>
 
 struct Settings
 {
@@ -23,7 +24,7 @@ public:
 				<< "Error parsing file \'" << *e.source().path << "\':\n"
 				<< '\t' << e.description() << '\n'
 				<< "\t\t(" << e.source().begin << ')';
-			logger::error(ss.str());
+			logger::error("{}", ss.str());
 			throw std::runtime_error("failed to load settings"s);
 		}
 	}

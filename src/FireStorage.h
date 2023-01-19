@@ -93,7 +93,8 @@ namespace FiresStorage
 			namespace fs = std::filesystem;
 
 			for (const auto& entry : fs::directory_iterator(jsons_path)) {
-				add_support_json(entry.path().string());
+				if (entry.path().extension() == ".json")
+					add_support_json(entry.path().string());
 			}
 		}
 
