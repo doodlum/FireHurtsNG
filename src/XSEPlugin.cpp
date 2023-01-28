@@ -272,7 +272,11 @@ struct PlayerCharacterHook
 
 	static void Hook()
 	{
-		stl::write_vfunc<RE::PlayerCharacter, 0xAD, PlayerCharacterHook>();
+		if (REL::Module::IsVR()) {
+			stl::write_vfunc<RE::PlayerCharacter, 0xAF, PlayerCharacterHook>();
+		} else {
+			stl::write_vfunc<RE::PlayerCharacter, 0xAD, PlayerCharacterHook>();
+		}
 	}
 
 };
