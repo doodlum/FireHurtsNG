@@ -1,27 +1,47 @@
 {
-    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
-    "name": "commonlibsse-plugin",
-    "version-string": "1.0.0",
-    "port-version": 0,
-    "description": "SKSE plugin based on CommonLibSSE, for unified AE/SE/VR deployment.",
-    "homepage": "https://www.skyrimng.com",
-    "license": "Apache-2.0",
-    "features": {
-        "plugin": {
-            "description": "Build the SKSE plugin.",
-            "dependencies": [
-                "commonlibsse-ng",
-                "tomlplusplus",
-                "glm",
-                "jsoncpp"
-            ]
-        }
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "commonlibsse-plugin",
+  "version-string": "1.0.0",
+  "port-version": 0,
+  "description": "SKSE plugin based on CommonLibSSE, for unified AE/SE/VR deployment.",
+  "homepage": "https://www.skyrimng.com",
+  "license": "GPL-3.0-or-later",
+  "features": {
+    "plugin": {
+      "description": "Build the SKSE plugin.",
+      "dependencies": [
+        "tomlplusplus",
+        "glm",
+        "jsoncpp"
+      ]
+    }
+  },
+  "default-features": [
+    "plugin"
+  ],
+  "builtin-baseline": "ee12231b20c95013c6638d845d04c91559a1d1ff",
+  "overrides": [
+    {
+      "name": "tomlplusplus",
+      "version": "2.3.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "directxmath",
+      "version>=": "2025-04-03"
     },
-    "default-features": [
-        "plugin"
-    ],
-    "builtin-baseline": "9259a0719d94c402aae2ab7975bc096afdec15df",
-    "overrides": [
-      { "name": "tomlplusplus", "version": "2.3.0" }
-    ]
+    {
+      "name": "directxtk",
+      "version>=": "2025-10-27"
+    },
+    {
+      "name": "fmt",
+      "version>=": "12.1.0"
+    },
+    {
+      "name": "spdlog",
+      "version>=": "1.16.0"
+    }
+  ]
 }

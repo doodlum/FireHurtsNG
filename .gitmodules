@@ -1,12 +1,3 @@
-[submodule "external/CommonLibSSE"]
-	path = external/CommonLibSSE
-	url = https://github.com/powerof3/CommonLibSSE.git
-[submodule "external/CommonLibAE"]
-	path = external/CommonLibAE
-	url = https://github.com/powerof3/CommonLibSSE.git
-[submodule "AutoTOML"]
-	path = AutoTOML
-	url = https://github.com/Ryan-rsm-McKenzie/AutoTOML
-[submodule "extern/AutoTOML"]
-	path = extern/AutoTOML
-	url = https://github.com/Ryan-rsm-McKenzie/AutoTOML
+[submodule "extern/CommonLibSSE-NG"]
+	path = extern/CommonLibSSE-NG
+	url = https://github.com/alandtse/CommonLibSSE-NG.git

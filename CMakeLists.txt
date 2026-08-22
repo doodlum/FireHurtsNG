@@ -31,3 +31,5 @@ target_link_libraries(
 			tomlplusplus::tomlplusplus
 			JsonCpp::JsonCpp 
 )
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
